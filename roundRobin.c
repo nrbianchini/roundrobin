@@ -1,24 +1,19 @@
 #include <stdio.h>
-#include <locale.h>
 
-// definição de constantes para as fatias de tempo e nro. máximo de processos
 #define timeSlice 4
 #define MAXprocesses 100
 
-// definição da estrutura de processos
 typedef struct {
     int id;
     int burstTime;
     int remainingTime;
 } Process;
 
-// definição de uma estrutura fila circular
 typedef struct {
     Process* processes[MAXprocesses];
     int front, rear;
 } Queue;
 
-// prototipação das funções
 void initializeQueue(Queue* queue);
 int queueEmpty(Queue* queue);
 void enqueue(Queue* queue, Process* process);
@@ -26,65 +21,62 @@ Process* dequeue(Queue* queue);
 void displayState(int time, Process* process, int burstTime, Queue* queue);
 void roundRobin(Queue* queue, int n);
 
-// inicializa a fila como vazia
+// initialize queue as empty
 void initializeQueue(Queue* queue) {
     queue->front = 0;
     queue->rear = 0;
 }
 
-// verifica se a fila está vazia comparando os índices de ínicio e fim
+// check if the queue is empty by comparing the start and end indices
 int queueEmpty(Queue* queue) {
-    // se retornar '1' está vazia, se '0' não está vazia
+    // if it returns '1', the queue is empty; if '0', it is not
     return queue->front == queue->rear;
 }
 
-/* insere um elemento no final da fila e atualiza 
-o índice 'rear' para a próxima posição de forma circular */
+/* insert an element at the end of the queue and update the 'rear' 
+index to the next position in a circular manner */
 void enqueue(Queue* queue, Process* process) {
     int next_rear = (queue->rear + 1) % MAXprocesses;
-    // verifica se a fila está cheia antes de adicionar um novo processo.
     if (next_rear != queue->front) {
         queue->processes[queue->rear] = process;
         queue->rear = next_rear;
     } else {
-        wprintf(L"A fila está cheia. Não é possível enfileirar.\n");
+        printf("The queue is full. It is not possible to enqueue.\n");
     }
 }
 
-/* remove um elemento do início da fila e atualiza o índice 
-'front' para a próxima posição de forma circular */
+/* remove an element from the front of the queue and update the 'front' 
+index to the next position in a circular way */
 Process* dequeue(Queue* queue) {
     if (!queueEmpty(queue)) {
         Process* process = queue->processes[queue->front];
         queue->front = (queue->front + 1) % MAXprocesses;
         return process;
     } else {
-        wprintf(L"A fila está vazia. Não é possível desenfileirar.\n");
+        printf("The queue is empty. It is not possible to dequeue.\n");
         return NULL;
     }
 }
 
-// imprime o estado atual da execução do processo
 void displayState(int time, Process* process, int burstTime, Queue* queue) {
-    wprintf(L"Tempo %d - %d \t Processo em execução: P%d \t Tempo restante: %d -> %d \t Ação executada: executa %d %s \t\t Próxima fila: ",
+    printf("Time %d - %d \t Process in execution: P%d \t Time left: %d -> %d \t Action executed: executing %d %s \t\t Next queue: ",
             time, time + burstTime - 1,
             process->id, process->remainingTime + burstTime, process->remainingTime,
-            burstTime, (process->remainingTime == 0) ? L"(Concluído)" : L"");
+            burstTime, (process->remainingTime == 0) ? "(Done)" : "(Pending)");
 
     int i = queue->front;
     while (i != queue->rear) {
-        wprintf(L"P%d ", queue->processes[i]->id);
+        printf("P%d ", queue->processes[i]->id);
         i = (i + 1) % MAXprocesses;
     }
 
     if (process->remainingTime > 0) {
-        wprintf(L"P%d", process->id);
+        printf("P%d", process->id);
     }
 
-    wprintf(L"\n");
+    printf("\n");
 }
 
-// executa o algoritmo de round robin
 void roundRobin(Queue* queue, int n) {
     int time = 0;
     int completed = 0;
@@ -100,7 +92,7 @@ void roundRobin(Queue* queue, int n) {
                 displayState(time, process, burstTime, queue);
                 time += burstTime;
 
-                // verifica se o processo ainda tem tempo restante para ser executado, se sim, re-enfileira o processo.
+                // check if the process has remaining execution time; if so, re-enqueue its
                 if (process->remainingTime == 0) {
                     completed++;
                 } else {
@@ -114,19 +106,16 @@ void roundRobin(Queue* queue, int n) {
 }
 
 int main() {
-    setlocale(LC_ALL, "Portuguese");
     int n;
-    wprintf(L"Insira o número de processos: ");
+    printf("Insert the number of processes: ");
     scanf("%d", &n);
 
     Process processes[n];
     Queue queue;
     initializeQueue(&queue);
 
-    /* inicializa o vetor de processos com os tempos de execução informados
-    pelo usuário e enfileira cada processo */
     for (int i = 0; i < n; i++) {
-        wprintf(L"Insira o tempo de execução do processo %d: ", i + 1);
+        printf("Insert the execution time for process %d: ", i + 1);
         scanf("%d", &processes[i].burstTime);
         processes[i].id = i + 1;
         processes[i].remainingTime = processes[i].burstTime;
@@ -135,7 +124,6 @@ int main() {
 
     printf("\n");
     
-    // executa o algoritmo de escalonamento round robin
     roundRobin(&queue, n);
 
     return 0;
